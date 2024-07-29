@@ -1,4 +1,4 @@
-module stock-workflow
+module stock_scheduler
 
 go 1.22.2
 

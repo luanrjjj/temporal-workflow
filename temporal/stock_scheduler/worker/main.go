@@ -5,6 +5,7 @@ import (
 
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
+	// temporal/stock_scheduler
 )
 
 func main() {
