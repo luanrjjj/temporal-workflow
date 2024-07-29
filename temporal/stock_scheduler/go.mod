@@ -1,4 +1,4 @@
-module stock_scheduler
+module github.com/luanrjjj/temporal-workflow/temporal
 
 go 1.22.2
 
