@@ -4,15 +4,12 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"time"
 
 	"go.temporal.io/sdk/activity"
-	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/converter"
 	"go.temporal.io/sdk/temporal"
-	"go.temporal.io/sdk/worker"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -86,14 +83,14 @@ func FetchStockDataActivity(ctx context.Context, symbol string) (string, error) 
 	return FetchStockData(symbol)
 }
 
-func saveStockDataActivityOnDatabase(ctx context.Context, records string) (string, error) {
+func SaveStockDataActivityOnDatabase(ctx context.Context, records string) (string, error) {
 	fmt.Printf(records)
 	return "string", nil
 }
 
 const fetchStockDataActivityName = "fetch-stock-data-activity"
 
-func stockFetcherWorkflow(ctx workflow.Context) (string, error) {
+func StockFetcherWorkflow(ctx workflow.Context) (string, error) {
 	// Fetch stock data for each symbol
 	var result string
 	// var stockData string
@@ -153,27 +150,27 @@ func stockFetcherWorkflow(ctx workflow.Context) (string, error) {
 	// final := fmt.Sprintf("Finish workflow %s, %s", result, "oi")
 }
 
-func main() {
-	c, err := client.Dial(client.Options{
-		HostPort: client.DefaultHostPort,
-	})
-	if err != nil {
-		log.Fatalln("Unable to create client", err)
-	}
-	defer c.Close()
+// func main() {
+// 	c, err := client.Dial(client.Options{
+// 		HostPort: client.DefaultHostPort,
+// 	})
+// 	if err != nil {
+// 		log.Fatalln("Unable to create client", err)
+// 	}
+// 	defer c.Close()
 
-	w := worker.New(c, "stock-task", worker.Options{})
-	w.RegisterWorkflow(stockFetcherWorkflow)
-	w.RegisterActivity(FetchStockDataActivity)
+// 	w := worker.New(c, "stock-task", worker.Options{})
+// 	w.RegisterWorkflow(StockFetcherWorkflow)
+// 	w.RegisterActivity(FetchStockDataActivity)
 
-	err = w.Run(worker.InterruptCh())
+// 	err = w.Run(worker.InterruptCh())
 
-	// we, err := c.ExecuteWorkflow(context.Background(), workflowOptions, stockFetcherWorkflow)
-	// if err != nil {
-	// 	log.Fatalln("Unable to execute workflow", err)
-	// }
-	if err != nil {
-		log.Fatalln("Unable to start worker", err)
-	}
-	// log.Println("Started workflow", "WorkflowID", we.GetID(), "RunID", we.GetRunID())
-}
+// 	// we, err := c.ExecuteWorkflow(context.Background(), workflowOptions, stockFetcherWorkflow)
+// 	// if err != nil {
+// 	// 	log.Fatalln("Unable to execute workflow", err)
+// 	// }
+// 	if err != nil {
+// 		log.Fatalln("Unable to start worker", err)
+// 	}
+// 	// log.Println("Started workflow", "WorkflowID", we.GetID(), "RunID", we.GetRunID())
+// }

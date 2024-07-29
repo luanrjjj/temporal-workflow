@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 
+	stock_scheduler "github.com/luanrjjj/temporal-workflow/temporal"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
 	// temporal/stock_scheduler
@@ -18,8 +19,8 @@ func main() {
 	defer c.Close()
 
 	w := worker.New(c, "stock-task", worker.Options{})
-	w.RegisterWorkflow(stockFetcherWorkflow)
-	w.RegisterActivity(FetchStockDataActivity)
+	w.RegisterWorkflow(stock_scheduler.StockFetcherWorkflow)
+	w.RegisterActivity(stock_scheduler.FetchStockDataActivity)
 
 	err = w.Run(worker.InterruptCh())
 
