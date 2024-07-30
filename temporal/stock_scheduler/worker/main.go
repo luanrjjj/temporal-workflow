@@ -18,9 +18,11 @@ func main() {
 	}
 	defer c.Close()
 
-	w := worker.New(c, "stock-task", worker.Options{})
+	w := worker.New(c, "schedule", worker.Options{})
+
 	w.RegisterWorkflow(stock_scheduler.StockFetcherWorkflow)
 	w.RegisterActivity(stock_scheduler.FetchStockDataActivity)
+	w.RegisterActivity(stock_scheduler.SaveStockDataActivityOnDatabase)
 
 	err = w.Run(worker.InterruptCh())
 

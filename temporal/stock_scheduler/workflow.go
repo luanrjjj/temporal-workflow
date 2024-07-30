@@ -2,6 +2,7 @@ package stock_scheduler
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -13,46 +14,57 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-type AmazingPayload struct {
-	Name string `json:"name"`
-	Age  int    `json:"age"`
+type RealItem struct {
+	Price     float64 `json:"price"`
+	CreatedAt string  `json:"created_at"`
 }
 
-// func main() {
-// 	c, err := client.Dial(client.Options{
-// 		HostPort: client.DefaultHostPort,
-// 	})
-// 	if err != nil {
-// 		log.Fatalln("Unable to create client", err)
-// 	}
-// 	defer c.Close()
+// Define the struct to represent the entire JSON response
+type ApiResponse struct {
+	Real []RealItem `json:"real"`
+}
 
-// 	// This workflow ID can be user business logic identifier as well.
-// 	workflowID := "cron_" + uuid.New()
-// 	workflowOptions := client.StartWorkflowOptions{
-// 		ID:           workflowID,
-// 		TaskQueue:    "cron",
-// 		CronSchedule: "* * * * *",
-// 	}
-// 	myPayload := AmazingPayload{Name: "aezo", Age: 12}
-// 	we, err := c.ExecuteWorkflow(context.Background(), workflowOptions, "say-hello-workflow", myPayload)
-// 	if err != nil {
-// 		log.Fatalln("Unable to execute workflow", err)
-// 	}
-// 	log.Println("Started workflow", "WorkflowID", we.GetID(), "RunID", we.GetRunID())
-// }
+type NewJsonFormat struct {
+	Code string      `json:"code"`
+	Data ApiResponse `json:"data`
+}
 
 var stockSymbols = []string{
 	"itub4",
-	"petrr3",
+	"petr3",
 	"vale3",
 	"petr4",
 	"b3sa3",
 	// Add more symbols as needed
 }
 
+func transformJson(code string, jsonData string) (string, error) {
+	// Create a variable to hold the unmarshalled data
+	var apiResponse ApiResponse
+
+	// Unmarshal the JSON data into the ApiResponse struct
+	err := json.Unmarshal([]byte(jsonData), &apiResponse)
+	if err != nil {
+		return "", fmt.Errorf("error unmarshalling JSON: %v", err)
+	}
+
+	// Create a new struct to hold the transformed data
+	newFormat := NewJsonFormat{
+		Code: code,
+		Data: apiResponse,
+	}
+
+	// Marshal the new struct into JSON
+	newJsonData, err := json.MarshalIndent(newFormat, "", "  ")
+	if err != nil {
+		return "", fmt.Errorf("error marshalling JSON: %v", err)
+	}
+
+	return string(newJsonData), nil
+}
+
 func FetchStockData(symbol string) (string, error) {
-	fmt.Println("asudhuashduas", symbol)
+	fmt.Println("kakka", symbol)
 
 	url := fmt.Sprintf("https://investidor10.com.br/api/cotacoes/acao/chart/%s/1825/true/real", symbol)
 	resp, err := http.Get(url)
@@ -64,9 +76,8 @@ func FetchStockData(symbol string) (string, error) {
 
 	body, err := ioutil.ReadAll(resp.Body)
 
-	// var data json
-	// err = json.Unmarshal(body, &data)
-	// fmt.Println("kkkkkkk", string(body))
+	var data ApiResponse
+	err = json.Unmarshal(body, &data)
 
 	if err != nil {
 		return "", err
@@ -74,7 +85,8 @@ func FetchStockData(symbol string) (string, error) {
 	// funs := make(map[string]string)
 	// funs[symbol] = string(body)
 
-	return symbol + " " + string(body), nil
+	newJson, err := transformJson(symbol, string(body))
+	return newJson, nil
 }
 
 func FetchStockDataActivity(ctx context.Context, symbol string) (string, error) {
@@ -119,58 +131,22 @@ func StockFetcherWorkflow(ctx workflow.Context) (string, error) {
 		// return err
 	}
 
-	// scheduleHandle, err := c.ScheduleClient().Create(ctx, c.ScheduleOptions{
-	// 	ID: scheduleID,
-	// 	Spec: c.ScheduleSpec{},
-	// 	Action: &c.ScheduleWorkflowAction{
-	// 		ID: workflowID,
-	// 		Workflow: stockFetcherWorkflow,
-	// 		TaskQueue: "shcedule",
-	// 	},
-	// })
-
 	for _, symbol := range stockSymbols {
-		err = workflow.ExecuteActivity(ctx, FetchStockDataActivity, scheduledById, startTime, symbol).Get(ctx, &result)
+		err = workflow.ExecuteActivity(ctx, FetchStockDataActivity, symbol, scheduledById, startTime).Get(ctx, &result)
 
 		if err != nil {
 			return result, nil
 		}
-
-		// err = workflow.ExecuteActivity(ctx, saveStockDataActivityOnDatabase, result).Get(ctx, &stockData)
+		// var verify string
+		// err = workflow.ExecuteActivity(ctx, SaveStockDataActivityOnDatabase, scheduledById, startTime, symbol).Get(ctx, &verify)
 
 		// if err != nil {
-		// 	return result, err
+		// 	return verify, nil
 		// }
 
 		workflow.GetLogger(ctx).Info("Result for symbol", "symbol", symbol, "result", result)
-
-		return result, nil
 	}
+	return result, nil
 	return "finished", nil
 	// final := fmt.Sprintf("Finish workflow %s, %s", result, "oi")
 }
-
-// func main() {
-// 	c, err := client.Dial(client.Options{
-// 		HostPort: client.DefaultHostPort,
-// 	})
-// 	if err != nil {
-// 		log.Fatalln("Unable to create client", err)
-// 	}
-// 	defer c.Close()
-
-// 	w := worker.New(c, "stock-task", worker.Options{})
-// 	w.RegisterWorkflow(StockFetcherWorkflow)
-// 	w.RegisterActivity(FetchStockDataActivity)
-
-// 	err = w.Run(worker.InterruptCh())
-
-// 	// we, err := c.ExecuteWorkflow(context.Background(), workflowOptions, stockFetcherWorkflow)
-// 	// if err != nil {
-// 	// 	log.Fatalln("Unable to execute workflow", err)
-// 	// }
-// 	if err != nil {
-// 		log.Fatalln("Unable to start worker", err)
-// 	}
-// 	// log.Println("Started workflow", "WorkflowID", we.GetID(), "RunID", we.GetRunID())
-// }

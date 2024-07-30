@@ -5,12 +5,13 @@ import (
 	"log"
 	"time"
 
+	stock_scheduler "github.com/luanrjjj/temporal-workflow/temporal"
 	"github.com/pborman/uuid"
 	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/client"
 )
 
-func start() {
+func main() {
 	ctx := context.Background()
 	// The client is a heavyweight object that should be created once per process.
 	c, err := client.Dial(client.Options{
@@ -30,7 +31,7 @@ func start() {
 		Spec: client.ScheduleSpec{},
 		Action: &client.ScheduleWorkflowAction{
 			ID:        workflowID,
-			Workflow:  "asuhdaushduhas",
+			Workflow:  stock_scheduler.StockFetcherWorkflow,
 			TaskQueue: "schedule",
 		},
 	})
